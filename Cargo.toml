@@ -2,4 +2,5 @@
 
 members = [
     "url-shortener-lib",
+    "url-shortener-rest-api",
 ]
