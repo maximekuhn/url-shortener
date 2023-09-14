@@ -1,1 +1,2 @@
 mod algorithms;
+mod manager;
