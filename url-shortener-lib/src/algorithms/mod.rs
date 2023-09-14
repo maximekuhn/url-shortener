@@ -1,4 +1,5 @@
 mod dummy_shortener;
+mod utils;
 
 /// Errors that can be returned when calling
 /// `shorten` method on a `ShortenerAlgorithm` implementation.
