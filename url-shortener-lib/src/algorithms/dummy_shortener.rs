@@ -1,5 +1,7 @@
 use crate::algorithms::{ErrorType, ShortenerAlgorithm};
 
+const ALGORITHM_NAME: &str = "DUMMY";
+
 /// A dummy URL shortener.
 /// For now, it doesn't shorten anything.
 /// The resolved URL is the input URL.
@@ -23,11 +25,15 @@ impl ShortenerAlgorithm for DummyShortener {
     fn resolve(&mut self, shortened_url: String) -> Option<String> {
         Some(shortened_url)
     }
+
+    fn get_name(&self) -> String {
+        ALGORITHM_NAME.to_string()
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::algorithms::dummy_shortener::DummyShortener;
+    use crate::algorithms::dummy_shortener::{ALGORITHM_NAME, DummyShortener};
     use crate::algorithms::ShortenerAlgorithm;
 
     #[test]
@@ -40,5 +46,11 @@ mod tests {
 
         let resolved_url = sut.resolve(shortened_url).unwrap();
         assert_eq!(url, &resolved_url);
+    }
+
+    #[test]
+    fn it_should_return_correct_name() {
+        let sut = DummyShortener::new();
+        assert_eq!(ALGORITHM_NAME, sut.get_name());
     }
 }

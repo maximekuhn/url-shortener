@@ -1,4 +1,4 @@
-mod dummy_shortener;
+pub mod dummy_shortener;
 mod utils;
 
 /// Errors that can be returned when calling
@@ -19,4 +19,7 @@ pub trait ShortenerAlgorithm {
     /// Tries to resolve a shortened URL.
     /// Returns None if the shortened URL can't be resolved, the result otherwise.
     fn resolve(&mut self, shortened_url: String) -> Option<String>;
+
+    /// Returns the algorithm name
+    fn get_name(&self) -> String;
 }
