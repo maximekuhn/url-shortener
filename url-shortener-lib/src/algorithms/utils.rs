@@ -3,7 +3,6 @@
 
 
 const SCHEME_SEPARATOR: &str = "://";
-
 fn remove_scheme(url: &str) -> &str {
     if url.contains(SCHEME_SEPARATOR) {
         let url_parts: Vec<&str> = url.split(SCHEME_SEPARATOR).collect();
@@ -15,9 +14,21 @@ fn remove_scheme(url: &str) -> &str {
     url
 }
 
+fn get_tld(url: &str) -> &str {
+    let without_scheme = remove_scheme(url);
+    let without_location = {
+        match without_scheme.contains("/") {
+            true => *without_scheme.split("/").collect::<Vec<&str>>().first().unwrap(),
+            false => without_scheme,
+        }
+    };
+    let domains: Vec<&str> = without_location.split(".").collect();
+    *domains.last().unwrap()
+}
+
 #[cfg(test)]
 mod tests {
-    use crate::algorithms::utils::remove_scheme;
+    use crate::algorithms::utils::{get_tld, remove_scheme};
 
     #[test]
     fn it_should_remove_scheme() {
@@ -36,5 +47,18 @@ mod tests {
         const AUTHORITY: &str = "www.apple.com/mac";
         let url1 = AUTHORITY.to_string();
         assert_eq!(AUTHORITY, remove_scheme(&url1));
+    }
+
+    #[test]
+    fn it_should_return_tld() {
+        let url1 = "http://www.github.com/api/v1";
+        let url2 = "http://www.aaaaaa.org";
+        let url3 = "www.ooooooo.fr/api/v1";
+        let url4 = "www.ooooooo.fr/api/v1/users/all";
+
+        assert_eq!("com", get_tld(url1));
+        assert_eq!("org", get_tld(url2));
+        assert_eq!("fr", get_tld(url3));
+        assert_eq!("fr", get_tld(url4));
     }
 }
