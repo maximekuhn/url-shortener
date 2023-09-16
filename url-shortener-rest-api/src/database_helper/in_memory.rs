@@ -1,28 +1,28 @@
-use std::collections::HashMap;
 use crate::database_helper::DBHelper;
+use std::collections::HashMap;
 
 pub struct InMemoryDBHelper {
-    mapping: HashMap<String, usize>,
+    shortened_to_original: HashMap<String, String>,
 }
 
 impl DBHelper for InMemoryDBHelper {
-    fn print(&self) {
-        println!("{:#?}", self.mapping);
+    fn save(&mut self, original_url: String, shortened_url: String) {
+        self.shortened_to_original
+            .insert(shortened_url, original_url);
     }
 
-    fn increment(&mut self) {
-        match self.mapping.get(&"toto".to_string()) {
-            None => self.mapping.insert("toto".to_string(), 1),
-            Some(old) => self.mapping.insert("toto".to_string(), *old + 1),
-        };
+    fn get_original_url(&self, shortened_url: String) -> Option<String> {
+        match self.shortened_to_original.get(&shortened_url) {
+            None => None,
+            Some(url) => Some(url.clone()),
+        }
     }
 }
-
 
 impl InMemoryDBHelper {
     pub fn new() -> Self {
         Self {
-            mapping: HashMap::new()
+            shortened_to_original: HashMap::new(),
         }
     }
 }
