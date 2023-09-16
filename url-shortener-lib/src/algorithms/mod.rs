@@ -1,4 +1,4 @@
-mod hash_algorithm;
+pub mod hash_algorithm;
 
 /// A trait that all algorithms must implement.
 pub trait ShortenerAlgorithm {
