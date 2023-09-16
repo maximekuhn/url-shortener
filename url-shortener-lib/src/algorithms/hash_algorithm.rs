@@ -1,6 +1,7 @@
 use crate::algorithms::ShortenerAlgorithm;
 
 const CHARACTERS_TO_RETURN: usize = 5;
+const ALGORITHM_NAME: &str = "hash_md5";
 
 /// A simple hasher algorithm that computes the MD5 hash of the given URL
 /// and returns the first 5 characters of it.
@@ -11,11 +12,15 @@ impl ShortenerAlgorithm for HashAlgorithm {
         let digest = md5::compute(url);
         format!("{:x}", digest)[0..CHARACTERS_TO_RETURN].to_string()
     }
+
+    fn get_name(&self) -> String {
+        ALGORITHM_NAME.to_string()
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::algorithms::hash_algorithm::HashAlgorithm;
+    use crate::algorithms::hash_algorithm::{HashAlgorithm, ALGORITHM_NAME};
     use crate::algorithms::ShortenerAlgorithm;
 
     #[test]
@@ -27,5 +32,11 @@ mod tests {
         let expected = "d7527".to_string();
         let actual = sut.shorten(url.to_string());
         assert_eq!(expected, actual);
+    }
+
+    #[test]
+    fn it_should_return_correct_name() {
+        let sut = HashAlgorithm;
+        assert_eq!(ALGORITHM_NAME, sut.get_name());
     }
 }
