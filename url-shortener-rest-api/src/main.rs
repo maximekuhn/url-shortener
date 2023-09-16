@@ -1,30 +1,38 @@
-use axum::{Json, Router, Server};
-use axum::http::StatusCode;
-use axum::routing::get;
-use serde::Deserialize;
-use url_shortener_lib::algorithms::hash_algorithm::HashAlgorithm;
-use url_shortener_lib::algorithms::ShortenerAlgorithm;
+use std::error::Error;
+use std::sync::{Arc, Mutex};
+use axum::{Router, Server, ServiceExt};
+use axum::routing::{get, post};
+use crate::algorithms_manager::AlgorithmsManager;
+use crate::application_state::ApplicationState;
+use crate::database_helper::DBHelper;
+use crate::database_helper::in_memory::InMemoryDBHelper;
 
-#[derive(Deserialize)]
-struct ShortenURLRequest {
-    url: String,
-}
-
-async fn shorten(Json(payload): Json<ShortenURLRequest>) -> (StatusCode, Json<String>) {
-    println!("ENDPOINT: /");
-    let hash_algorithm = HashAlgorithm;
-    let shortened_url = hash_algorithm.shorten(payload.url);
-    (StatusCode::OK, Json(shortened_url))
-}
+mod application_state;
+mod database_helper;
+mod algorithms_manager;
+mod routes;
 
 #[tokio::main]
-async fn main() {
-    let app =
-        Router::new()
-            .route("/shorten", get(shorten));
+async fn main() -> Result<(), Box<dyn Error>> {
+    // Create the application state
+    let application_state = create_application_state();
 
-    Server::bind(&"0.0.0.0:3000".parse().unwrap())
+    // Create router
+    let app = Router::new()
+        .route("/api/v1/shorten", post(routes::shorten))
+        .route("/api/v1/resolve", get(routes::resolve))
+        .with_state(application_state);
+
+    // Run the server
+    Server::bind(&"0.0.0.0:3000".parse()?)
         .serve(app.into_make_service())
-        .await
-        .unwrap();
+        .await?;
+
+    Ok(())
+}
+
+fn create_application_state() -> ApplicationState {
+    ApplicationState {
+        db_helper: Arc::new(Mutex::new(InMemoryDBHelper::new()))
+    }
 }
