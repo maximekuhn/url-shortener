@@ -15,3 +15,6 @@ tokio = { version = "1.32.0", features = ["full"] }
 # JSON serializer/deserializer
 serde_json = { version = "1.0.107" }
 serde = { version = "1.0.188", features = ["derive"] }
+
+# URL shortener lib
+url-shortener-lib = {path = "../url-shortener-lib" }

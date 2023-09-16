@@ -1,24 +1,27 @@
 use axum::{Json, Router, Server};
-use axum::body::Body;
-use axum::http::Request;
+use axum::http::StatusCode;
 use axum::routing::get;
 use serde::Deserialize;
+use url_shortener_lib::algorithms::hash_algorithm::HashAlgorithm;
+use url_shortener_lib::algorithms::ShortenerAlgorithm;
 
 #[derive(Deserialize)]
-struct URLRequest {
+struct ShortenURLRequest {
     url: String,
 }
 
-async fn index(Json(payload): Json<URLRequest>) {
+async fn shorten(Json(payload): Json<ShortenURLRequest>) -> (StatusCode, Json<String>) {
     println!("ENDPOINT: /");
-    println!("body: {:?}", payload.url);
+    let hash_algorithm = HashAlgorithm;
+    let shortened_url = hash_algorithm.shorten(payload.url);
+    (StatusCode::OK, Json(shortened_url))
 }
 
 #[tokio::main]
 async fn main() {
     let app =
         Router::new()
-            .route("/", get(index));
+            .route("/shorten", get(shorten));
 
     Server::bind(&"0.0.0.0:3000".parse().unwrap())
         .serve(app.into_make_service())
