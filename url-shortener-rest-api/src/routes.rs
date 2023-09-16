@@ -32,7 +32,7 @@ pub async fn shorten(
                 .expect("Poisoned mutex")
                 .save(original_url, url.clone());
             (
-                StatusCode::OK,
+                StatusCode::CREATED,
                 Json(URLShortenResponse { shortened_url: url }),
             )
         }
