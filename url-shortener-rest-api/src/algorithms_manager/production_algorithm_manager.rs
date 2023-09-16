@@ -18,10 +18,15 @@ impl AlgorithmsManager for ProductionAlgorithmManager {
 
 impl ProductionAlgorithmManager {
     pub fn new() -> Self {
-        let mut algorithms: HashMap<String, Box<dyn ShortenerAlgorithm + Send + Sync>> =
-            HashMap::new();
-        algorithms.insert("hash_md5".to_string(), Box::new(HashAlgorithm));
+        Self {
+            algorithms: HashMap::new(),
+        }
+    }
 
-        Self { algorithms }
+    pub fn with_hash_algorithm(mut self) -> Self {
+        let hash_algorithm = HashAlgorithm;
+        self.algorithms
+            .insert(hash_algorithm.get_name(), Box::new(hash_algorithm));
+        self
     }
 }

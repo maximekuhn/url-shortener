@@ -1,24 +1,22 @@
-use std::error::Error;
-use std::sync::{Arc, Mutex};
-use axum::{Router, Server};
-use axum::routing::{get, post};
 use crate::algorithms_manager::production_algorithm_manager::ProductionAlgorithmManager;
 use crate::application_state::ApplicationState;
 use crate::database_helper::in_memory::InMemoryDBHelper;
+use axum::routing::{get, post};
+use axum::{Router, Server};
+use std::error::Error;
+use std::sync::{Arc, Mutex};
 
-mod database_helper;
 mod algorithms_manager;
-mod routes;
 mod application_state;
-
-
+mod database_helper;
+mod routes;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     // Create the application state
     let application_state = ApplicationState {
         db_helper: Arc::new(Mutex::new(InMemoryDBHelper::new())),
-        algorithms_manager: Arc::new(ProductionAlgorithmManager::new()),
+        algorithms_manager: Arc::new(ProductionAlgorithmManager::new().with_hash_algorithm()),
     };
 
     // Create router
