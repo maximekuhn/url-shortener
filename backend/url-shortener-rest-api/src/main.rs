@@ -1,5 +1,5 @@
 use axum::{
-    extract::State,
+    extract::{State, Path},
     http::StatusCode,
     routing::{get, post},
     Json, Router, Server,
@@ -56,10 +56,6 @@ struct ShortenUrl {
     original_url: String,
 }
 
-#[derive(Deserialize)]
-struct ResolveUrl {
-    shortened_url: String,
-}
 
 async fn shorten(
     State(state): State<AppState>,
@@ -76,13 +72,13 @@ async fn shorten(
 
 async fn resolve(
     State(state): State<AppState>,
-    Json(payload): Json<ResolveUrl>,
+    Path(shortened_url): Path<String>,
 ) -> (StatusCode, Json<String>) {
     println!("->> /resolve");
     let db = state.db.read().expect("Lock poisoned");
-    match db.get(&payload.shortened_url) {
+    match db.get(&shortened_url) {
         Some(original_url) => (StatusCode::OK, Json(original_url)),
-        None => (StatusCode::NOT_FOUND, Json("".to_string())),
+        None => (StatusCode::IM_A_TEAPOT, Json("".to_string())),
     }
 }
 
@@ -96,7 +92,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // Create router
     let router = Router::new()
         .route("/shorten", post(shorten))
-        .route("/resolve", get(resolve))
+        .route("/resolve/:shortened_url", get(resolve))
         .with_state(app_state)
         .layer(CorsLayer::permissive());
 
