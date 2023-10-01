@@ -1,5 +1,6 @@
 import { Box, Button, Flex, Input, Tag } from "@chakra-ui/react";
 import { useState } from "react";
+import { BACKEND_URL } from "../config/config";
 
 function ResolverForm() {
     const [shortenedURL, setShortenedURL] = useState<string | null>(null);
@@ -10,7 +11,7 @@ function ResolverForm() {
             return;
         }
 
-        const url = `http://localhost:9090/resolve/${shortenedURL}`;
+        const url = `${BACKEND_URL}/resolve/${shortenedURL}`;
         fetch(url, {
             method: "GET",
         })

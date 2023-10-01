@@ -1,6 +1,6 @@
 import { Box, Button, Flex, Input, Tag } from "@chakra-ui/react";
 import { useState } from "react";
-
+import { BACKEND_URL } from "../config/config";
 
 function ShortenerForm() {
     const [shortenedURL, setShortenedURL] = useState<string | null>(null);
@@ -11,7 +11,7 @@ function ShortenerForm() {
             return;
         }
 
-        const url = "http://localhost:9090/shorten";
+        const url = `${BACKEND_URL}/shorten`;
         fetch(url, {
             method: "POST",
             headers: {
