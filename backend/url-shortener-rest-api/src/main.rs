@@ -1,12 +1,17 @@
-use std::{error::Error, collections::HashMap, sync::{Arc, RwLock}};
-
 use axum::{
+    extract::State,
+    http::StatusCode,
     routing::{get, post},
-    Router, Server, extract::State, http::StatusCode, Json,
+    Json, Router, Server,
 };
 use serde::Deserialize;
+use tower_http::cors::CorsLayer;
+use std::{
+    collections::HashMap,
+    error::Error,
+    sync::{Arc, RwLock},
+};
 use url_shortener_lib::algorithms::ShortenerAlgorithm;
-
 
 trait DBTrait {
     fn save(&mut self, original_url: String, shortened_url: String);
@@ -15,7 +20,7 @@ trait DBTrait {
 }
 
 struct InMemoryDB {
-    store: HashMap<String, String>
+    store: HashMap<String, String>,
 }
 
 impl InMemoryDB {
@@ -56,23 +61,30 @@ struct ResolveUrl {
     shortened_url: String,
 }
 
-async fn shorten(State(state): State<AppState>, Json(payload): Json<ShortenUrl>) -> (StatusCode, String) {
+async fn shorten(
+    State(state): State<AppState>,
+    Json(payload): Json<ShortenUrl>,
+) -> (StatusCode, Json<String>) {
+    println!("->> /shorten");
     let db = &mut state.db.write().expect("Lock poisoned");
     let original_url = payload.original_url;
     let algorithm = url_shortener_lib::algorithms::hash_algorithm::HashAlgorithm;
     let shortened_url = algorithm.shorten(original_url.clone());
     db.save(original_url, shortened_url.clone());
-    (StatusCode::OK, shortened_url)
+    (StatusCode::OK, Json(shortened_url))
 }
 
-async fn resolve(State(state) : State<AppState>, Json(payload): Json<ResolveUrl>) -> (StatusCode, String) {
+async fn resolve(
+    State(state): State<AppState>,
+    Json(payload): Json<ResolveUrl>,
+) -> (StatusCode, Json<String>) {
+    println!("->> /resolve");
     let db = state.db.read().expect("Lock poisoned");
     match db.get(&payload.shortened_url) {
-        Some(original_url) => (StatusCode::OK, original_url),
-        None => (StatusCode::NOT_FOUND, "".to_string()),
+        Some(original_url) => (StatusCode::OK, Json(original_url)),
+        None => (StatusCode::NOT_FOUND, Json("".to_string())),
     }
 }
-
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -85,10 +97,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let router = Router::new()
         .route("/shorten", post(shorten))
         .route("/resolve", get(resolve))
-        .with_state(app_state);
+        .with_state(app_state)
+        .layer(CorsLayer::permissive());
 
     // Start the server, listening on all interfaces, port 3000
-    Server::bind(&"0.0.0.0:3000".parse()?)
+    Server::bind(&"0.0.0.0:9090".parse()?)
         .serve(router.into_make_service())
         .await?;
 
