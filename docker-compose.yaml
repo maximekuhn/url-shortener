@@ -1,0 +1,19 @@
+version: '3'
+services:
+  frontend:
+    image: url-shortener-frontend
+    build: ./frontend
+    networks:
+      - urlshortenernw
+    ports:
+      - "3000:3000"
+  backend:
+    image: url-shortener-backend
+    build: ./backend
+    networks:
+      - urlshortenernw
+    ports:
+      - "9090:9090"
+networks:
+  urlshortenernw:
+    driver: bridge
