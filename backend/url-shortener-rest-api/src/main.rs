@@ -78,7 +78,7 @@ async fn resolve(
     let db = state.db.read().expect("Lock poisoned");
     match db.get(&shortened_url) {
         Some(original_url) => (StatusCode::OK, Json(original_url)),
-        None => (StatusCode::IM_A_TEAPOT, Json("".to_string())),
+        None => (StatusCode::NOT_FOUND, Json("".to_string())),
     }
 }
 
