@@ -1,33 +1,95 @@
-use crate::algorithms_manager::production_algorithm_manager::ProductionAlgorithmManager;
-use crate::application_state::ApplicationState;
-use crate::database_helper::in_memory::InMemoryDBHelper;
-use axum::routing::{get, post};
-use axum::{Router, Server};
-use std::error::Error;
-use std::sync::{Arc, Mutex};
+use std::{error::Error, collections::HashMap, sync::{Arc, RwLock}};
 
-mod algorithms_manager;
-mod application_state;
-mod database_helper;
-mod routes;
+use axum::{
+    routing::{get, post},
+    Router, Server, extract::State, http::StatusCode, Json,
+};
+use serde::Deserialize;
+use url_shortener_lib::algorithms::ShortenerAlgorithm;
+
+
+trait DBTrait {
+    fn save(&mut self, original_url: String, shortened_url: String);
+
+    fn get(&self, shortened_url: &str) -> Option<String>;
+}
+
+struct InMemoryDB {
+    store: HashMap<String, String>
+}
+
+impl InMemoryDB {
+    fn new() -> Self {
+        Self {
+            store: HashMap::new(),
+        }
+    }
+}
+
+impl DBTrait for InMemoryDB {
+    fn save(&mut self, original_url: String, shortened_url: String) {
+        self.store.insert(shortened_url, original_url);
+    }
+
+    fn get(&self, shortened_url: &str) -> Option<String> {
+        match self.store.get(shortened_url) {
+            Some(original_url) => Some(original_url.clone()),
+            None => None,
+        }
+    }
+}
+
+type DB = Arc<RwLock<dyn DBTrait + Send + Sync>>;
+
+#[derive(Clone)]
+struct AppState {
+    db: DB,
+}
+
+#[derive(Deserialize)]
+struct ShortenUrl {
+    original_url: String,
+}
+
+#[derive(Deserialize)]
+struct ResolveUrl {
+    shortened_url: String,
+}
+
+async fn shorten(State(state): State<AppState>, Json(payload): Json<ShortenUrl>) -> (StatusCode, String) {
+    let db = &mut state.db.write().expect("Lock poisoned");
+    let original_url = payload.original_url;
+    let algorithm = url_shortener_lib::algorithms::hash_algorithm::HashAlgorithm;
+    let shortened_url = algorithm.shorten(original_url.clone());
+    db.save(original_url, shortened_url.clone());
+    (StatusCode::OK, shortened_url)
+}
+
+async fn resolve(State(state) : State<AppState>, Json(payload): Json<ResolveUrl>) -> (StatusCode, String) {
+    let db = state.db.read().expect("Lock poisoned");
+    match db.get(&payload.shortened_url) {
+        Some(original_url) => (StatusCode::OK, original_url),
+        None => (StatusCode::NOT_FOUND, "".to_string()),
+    }
+}
+
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    // Create the application state
-    let application_state = ApplicationState {
-        db_helper: Arc::new(Mutex::new(InMemoryDBHelper::new())),
-        algorithms_manager: Arc::new(ProductionAlgorithmManager::new().with_hash_algorithm()),
+    // Create state
+    let app_state = AppState {
+        db: Arc::new(RwLock::new(InMemoryDB::new())),
     };
 
     // Create router
-    let app = Router::new()
-        .route("/api/v1/shorten", post(routes::shorten))
-        .route("/api/v1/resolve", get(routes::resolve))
-        .with_state(application_state);
+    let router = Router::new()
+        .route("/shorten", post(shorten))
+        .route("/resolve", get(resolve))
+        .with_state(app_state);
 
-    // Run the server
+    // Start the server, listening on all interfaces, port 3000
     Server::bind(&"0.0.0.0:3000".parse()?)
-        .serve(app.into_make_service())
+        .serve(router.into_make_service())
         .await?;
 
     Ok(())
