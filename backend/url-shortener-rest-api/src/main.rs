@@ -100,7 +100,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .with_state(app_state)
         .layer(CorsLayer::permissive());
 
-    // Start the server, listening on all interfaces, port 3000
+    // Start the server, listening on all interfaces, port 9090
     Server::bind(&"0.0.0.0:9090".parse()?)
         .serve(router.into_make_service())
         .await?;
